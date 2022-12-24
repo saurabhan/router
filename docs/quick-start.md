@@ -41,6 +41,13 @@ const routeConfig = rootRoute.addChildren([indexRoute, aboutRoute])
 
 const router = createReactRouter({ routeConfig })
 
+//Register you Router for full typesafety
+declare module '@tanstack/react-router' {
+  interface RegisterRouter {
+    router: typeof router
+  }
+}
+
 function App() {
   return <RouterProvider router={router} />
 }

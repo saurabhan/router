@@ -1,7 +1,10 @@
 import * as React from 'react'
 
 import { useSyncExternalStore } from 'use-sync-external-store/shim'
+// @ts-ignore
+// import { useSyncExternalStore } from './uSES/useSyncExternalStoreShim'
 import { createEffect, createRoot, untrack, unwrap } from '@solidjs/reactivity'
+import { createStore } from '@solidjs/reactivity'
 
 import {
   Route,
@@ -37,9 +40,9 @@ export * from '@tanstack/router-core'
 
 export * from '@solidjs/reactivity'
 
-export type SyncRouteComponent<TProps = {}> = (
-  props: TProps,
-) => JSX.Element | React.ReactNode
+type ReactNode = any
+
+export type SyncRouteComponent<TProps = {}> = (props: TProps) => ReactNode
 
 export type RouteComponent<TProps = {}> = SyncRouteComponent<TProps> & {
   preload?: () => Promise<void>
@@ -88,13 +91,13 @@ export type MakeMatchRouteOptions<
   MatchRouteOptions & {
     // If a function is passed as a child, it will be given the `isActive` boolean to aid in further styling on the element it returns
     children?:
-      | React.ReactNode
+      | ReactNode
       | ((
           params: RouteInfoByPath<
             RegisteredAllRouteInfo,
             ResolveRelativePath<TFrom, NoInfer<TTo>>
           >['allParams'],
-        ) => React.ReactNode)
+        ) => ReactNode)
   }
 
 export type MakeLinkPropsOptions<
@@ -109,9 +112,7 @@ export type MakeLinkOptions<
   React.AnchorHTMLAttributes<HTMLAnchorElement> &
   Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'children'> & {
     // If a function is passed as a child, it will be given the `isActive` boolean to aid in further styling on the element it returns
-    children?:
-      | React.ReactNode
-      | ((state: { isActive: boolean }) => React.ReactNode)
+    children?: ReactNode | ((state: { isActive: boolean }) => ReactNode)
   }
 
 declare module '@tanstack/router-core' {
@@ -124,14 +125,14 @@ declare module '@tanstack/router-core' {
   }
 
   interface RouterOptions<TRouteConfig, TRouterContext> {
-    // ssrFooter?: () => JSX.Element | React.ReactNode
+    // ssrFooter?: () => JSX.Element | Node
   }
 }
 
 export type PromptProps = {
   message: string
   when?: boolean | any
-  children?: React.ReactNode
+  children?: ReactNode
 }
 
 //
@@ -247,19 +248,16 @@ export function useLinkProps<
   }
 }
 
-type LinkFn<
+export interface LinkFn<
   TDefaultFrom extends RegisteredAllRouteInfo['routePaths'] = '/',
   TDefaultTo extends string = '.',
-> = {
+> {
   <
     TFrom extends RegisteredAllRouteInfo['routePaths'] = TDefaultFrom,
     TTo extends string = TDefaultTo,
   >(
     props: MakeLinkOptions<TFrom, TTo>,
-  ): JSX.Element
-  from: <TRelativeFrom>(
-    from: TRelativeFrom,
-  ) => LinkFn<TRelativeFrom, TDefaultTo>
+  ): ReactNode
 }
 
 export const Link: LinkFn = React.forwardRef((props: any, ref) => {
@@ -290,7 +288,7 @@ export const routerContext = React.createContext<{ router: RegisteredRouter }>(
 
 export type MatchesProviderProps = {
   value: MatchesContextValue
-  children: React.ReactNode
+  children: ReactNode
 }
 
 const EMPTY = {}
@@ -304,9 +302,7 @@ export const __useStoreValue = <TSeed, TReturn>(
   // If there is no selector, track the seed
   // If there is a selector, do not track the seed
   const getValue = () =>
-    (!selector
-      ? unwrap(seed())
-      : selector(untrack(() => unwrap(seed())))) as TReturn
+    (!selector ? seed() : selector(untrack(() => seed()))) as TReturn
 
   // If empty, initialize the value
   if (valueRef.current === EMPTY) {
@@ -321,12 +317,15 @@ export const __useStoreValue = <TSeed, TReturn>(
     return createRoot(() => {
       createEffect(() => {
         // Read and update the value
-        // getValue will handle which values are acccessed and
+        // getValue will handle which values are accessed and
         // thus tracked.
         // sharedClone will both recursively track the end result
         // and ensure that the previous value is structurally shared
         // into the new version.
-        valueRef.current = sharedClone(valueRef.current, getValue())
+        valueRef.current = unwrap(
+          // Unwrap the value to get rid of any proxy structures
+          sharedClone(valueRef.current, getValue()),
+        )
         cb()
       })
     })
@@ -334,6 +333,27 @@ export const __useStoreValue = <TSeed, TReturn>(
 
   return useSyncExternalStore(getStore, getSnapshot, getSnapshot)
 }
+
+const [store, setStore] = createStore({ foo: 'foo', bar: { baz: 'baz' } })
+
+createRoot(() => {
+  let prev: any
+
+  createEffect(() => {
+    console.log('effect')
+    const next = sharedClone(prev, store)
+    console.log(next)
+    prev = untrack(() => next)
+  })
+})
+
+setStore((s) => {
+  s.foo = '1'
+})
+
+setStore((s) => {
+  s.bar.baz = '2'
+})
 
 export function createReactRouter<
   TRouteConfig extends AnyRouteConfig = RouteConfig,
@@ -380,6 +400,8 @@ export function RouterProvider<
   )
 
   React.useEffect(router.mount, [router])
+
+  console.log('current', currentMatches)
 
   return (
     <>
@@ -776,22 +798,22 @@ export function usePrompt(message: string, when: boolean | any): void {
 
 export function Prompt({ message, when, children }: PromptProps) {
   usePrompt(message, when ?? true)
-  return (children ?? null) as React.ReactNode
+  return (children ?? null) as ReactNode
 }
 
-function circularStringify(obj: any) {
-  const seen = new Set()
+// function circularStringify(obj: any) {
+//   const seen = new Set()
 
-  return (
-    JSON.stringify(obj, (_, value) => {
-      if (typeof value === 'function') {
-        return undefined
-      }
-      if (typeof value === 'object' && value !== null) {
-        if (seen.has(value)) return
-        seen.add(value)
-      }
-      return value
-    }) || ''
-  )
-}
+//   return (
+//     JSON.stringify(obj, (_, value) => {
+//       if (typeof value === 'function') {
+//         return undefined
+//       }
+//       if (typeof value === 'object' && value !== null) {
+//         if (seen.has(value)) return
+//         seen.add(value)
+//       }
+//       return value
+//     }) || ''
+//   )
+// }

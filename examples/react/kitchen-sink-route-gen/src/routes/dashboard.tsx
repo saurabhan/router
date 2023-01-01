@@ -3,6 +3,7 @@ import { Link, Outlet } from '@tanstack/react-router'
 import { fetchInvoices } from '../mockTodos'
 
 import { routeConfig } from '../routes.generated/dashboard'
+import { dashboardInvoicesinvoiceIdRoute } from '../routes.generated/dashboard/invoices/$invoiceId.client'
 
 routeConfig.generate({
   component: Dashboard,
@@ -14,22 +15,22 @@ routeConfig.generate({
   },
 })
 
-const RelativeLink = Link.from(routeConfig.id)
-
 function Dashboard() {
   return (
     <>
       <div className="flex items-center border-b">
         <h2 className="text-xl p-2">Dashboard</h2>
-        <RelativeLink
-          to={'./invoices/$invoiceId'}
+        <Link
+          from={routeConfig.id}
+          to={''}
+          // to={'./invoices/$invoiceId'}
           params={{
             invoiceId: 3,
           }}
           className="py-1 px-2 text-xs bg-blue-500 text-white rounded-full"
         >
           1 New Invoice
-        </RelativeLink>
+        </Link>
       </div>
       <div className="flex flex-wrap divide-x">
         {(

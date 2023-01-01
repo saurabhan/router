@@ -12,7 +12,7 @@ import { GetFrameworkGeneric } from './frameworks'
 import {
   LinkInfo,
   LinkOptions,
-  NavigateOptionsAbsolute,
+  NavigateOptions,
   ToOptions,
   ValidFromPath,
   ResolveRelativePath,
@@ -52,10 +52,10 @@ import {
   pick,
   PickAsRequired,
   PickRequired,
-  sharedClone,
   Timeout,
   Updater,
 } from './utils'
+import { sharedClone } from './sharedClone'
 
 export interface RegisterRouter {
   // router: Router
@@ -345,7 +345,7 @@ export interface Router<
     TFrom extends ValidFromPath<TAllRouteInfo> = '/',
     TTo extends string = '.',
   >(
-    opts: NavigateOptionsAbsolute<TAllRouteInfo, TFrom, TTo>,
+    opts: NavigateOptions<TAllRouteInfo, TFrom, TTo>,
   ) => Promise<void>
   matchRoute: <
     TFrom extends ValidFromPath<TAllRouteInfo> = '/',
@@ -410,7 +410,6 @@ export function createRouter<
 >(
   userOptions?: RouterOptions<TRouteConfig, TRouterContext>,
 ): Router<TRouteConfig, TAllRouteInfo, TRouterContext> {
-
   const originalOptions = {
     defaultLoaderGcMaxAge: 5 * 60 * 1000,
     defaultLoaderMaxAge: 0,
@@ -699,7 +698,7 @@ export function createRouter<
         // In the future, we might need to invert control here for more adapters
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (window.addEventListener) {
-          // Listen to visibillitychange and focus
+          // Listen to visibilitychange and focus
           window.addEventListener('visibilitychange', onFocus, false)
           window.addEventListener('focus', onFocus, false)
         }
@@ -774,6 +773,7 @@ export function createRouter<
           strictParseParams: true,
         })
 
+        console.log('set loading', matches)
         setStore((s) => {
           s.status = 'loading'
           s.pendingMatches = matches
@@ -871,6 +871,7 @@ export function createRouter<
       })
 
       setStore((s) => {
+        console.log('set', matches)
         Object.assign(s, {
           status: 'idle',
           currentLocation: store.latestLocation,

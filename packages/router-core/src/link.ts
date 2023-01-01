@@ -1,4 +1,3 @@
-import { AnyPathParams } from './routeConfig'
 import {
   AnyAllRouteInfo,
   DefaultAllRouteInfo,
@@ -112,9 +111,18 @@ export type RelativeToPathAutoComplete<
     ]
     ? `${TTo}${Join<RestPath>}`
     : never
-  : './' | '../' | AllPaths
+  :
+      | (TFrom extends `/`
+          ? never
+          : SplitPaths extends [...Split<TFrom, false>, ...infer RestPath]
+          ? Join<RestPath> extends { length: 0 }
+            ? never
+            : './'
+          : never)
+      | (TFrom extends `/` ? never : '../')
+      | AllPaths
 
-export type NavigateOptionsAbsolute<
+export type NavigateOptions<
   TAllRouteInfo extends AnyAllRouteInfo = DefaultAllRouteInfo,
   TFrom extends TAllRouteInfo['routePaths'] = '/',
   TTo extends string = '.',
@@ -250,7 +258,7 @@ export type LinkOptions<
   TAllRouteInfo extends AnyAllRouteInfo = DefaultAllRouteInfo,
   TFrom extends TAllRouteInfo['routePaths'] = '/',
   TTo extends string = '.',
-> = NavigateOptionsAbsolute<TAllRouteInfo, TFrom, TTo> & {
+> = NavigateOptions<TAllRouteInfo, TFrom, TTo> & {
   // The standard anchor tag target attribute
   target?: HTMLAnchorElement['target']
   // Defaults to `{ exact: false, includeHash: false }`

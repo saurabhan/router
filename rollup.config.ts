@@ -1,6 +1,6 @@
 import { RollupOptions } from 'rollup'
 import babel from '@rollup/plugin-babel'
-import terser from '@rollup/plugin-terser'
+import { terser } from 'rollup-plugin-terser'
 import size from 'rollup-plugin-size'
 import visualizer from 'rollup-plugin-visualizer'
 import replace from '@rollup/plugin-replace'
@@ -193,11 +193,7 @@ function umdProd({
       babelPlugin,
       nodeResolve({ extensions: ['.ts', '.tsx'] }),
       umdDevPlugin('production'),
-      terser({
-        sourceMap: true,
-        mangle: true,
-        compress: true,
-      }),
+      terser(),
       size({}),
       visualizer({
         filename: `${packageDir}/build/stats-html.html`,
